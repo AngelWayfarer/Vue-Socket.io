@@ -1,23 +1,23 @@
 import Emitter from './Emitter'
 import Socket from 'socket.io-client'
 
-export default class {
+export default class{
 
     constructor(connection, store) {
 
-        if (typeof connection == 'string') {
+        if(typeof connection == 'string'){
             this.Socket = Socket(connection);
-        } else {
+        }else{
             this.Socket = connection
         }
 
-        if (store) this.store = store;
+        if(store) this.store = store;
 
         this.onEvent()
 
     }
 
-    onEvent() {
+    onEvent(){
         this.Socket.onevent = (packet) => {
             Emitter.emit(packet.data[0], packet.data[1]);
 
@@ -51,24 +51,15 @@ export default class {
     }
 
 
-    passToStore(event, payload) {
-        if (!event.startsWith('SOCKET_')) return
-        for (let namespaced in this.store._mutations) {
-            let mutation = namespaced.split('/').pop()
-            mutation = mutation.replace('SOCKET_', '').replace(/_/, '');
-            if (`SOCKET_${mutation.toUpperCase()}` === event.toUpperCase()) this.store.commit(namespaced, payload);
+    commitStore(type, payload){
+
+        if(type.split('_')[0].toUpperCase() === 'SOCKET'){
+
+            if(this.store._mutations[type])
+                this.store.commit(type, payload)
+
         }
 
-        for (let namespaced in this.store._actions) {
-
-            let action = namespaced.split('/').pop();
-            if (!action.startsWith('socket_')) continue
-
-            let camelcased = 'socket_' + event
-                    .replace('SOCKET_', '')
-                    .replace(/^([A-Z])|[\W\s_]+(\w)/g, (match, p1, p2) => p2 ? p2.toUpperCase() : p1.toLowerCase())
-
-            if (action === camelcased) this.store.dispatch(namespaced, payload)
-        }
     }
+
 }
